@@ -1,0 +1,25 @@
+body {
+    background: linear-gradient(25deg, #f4a548 50%, #f6d198 50%);
+    min-height: 1000px;
+    text-align: center;
+}
+
+button {
+    background-color: #26191b;
+    height: 44px;
+    width: 74px;
+    border-radius: 14%;
+    color: white;
+    margin: 5% 2%;
+}
+
+input {
+    margin-top: 3%;
+    font-size: larger;
+    border-radius: 6%;
+}
+
+label {
+    font-size: 20px;
+    font-weight: 600;
+}
