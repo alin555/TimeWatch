@@ -2,6 +2,7 @@ body {
     background: linear-gradient(25deg, #f4a548 50%, #f6d198 50%);
     min-height: 1000px;
     text-align: center;
+    font-family: 'Varela Round', sans-serif;
 }
 
 button {

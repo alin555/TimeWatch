@@ -1,15 +1,9 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const ejs = require("ejs");
 
 const app = express();
 
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
 app.use(express.static("public"));
-app.set("view engine", "ejs");
 
 mongoose.connect("mongodb://localhost:27017/workersDB", {
     useNewUrlParser: true,
@@ -24,7 +18,7 @@ const workerScheme = new mongoose.Schema({
 
 const timerScheme = new mongoose.Schema({
     worker: [workerScheme],
-    seconds: Number,
+    millSeconds: Number,
     date: String
 });
 
@@ -48,90 +42,79 @@ app.get("/", function (req, res) {
     res.sendFile(__dirname + "/index.html");
 });
 
-// const worker1 = new Worker({
-//     workerID: 1,
-//     firstName: "alon",
-//     lastName: "zrihen"
-// });
-
-// const worker2 = new Worker({
-//     workerID: 2,
-//     firstName: "yael",
-//     lastName: "tamir"
-// });
-
-// const worker3 = new Worker({
-//     workerID: 3,
-//     firstName: "nati",
-//     lastName: "hazbani"
-// });
-// worker1.save();
-// worker2.save();
-
-// worker3.save();
-
-
-app.post("/post", function (req, res) {
+app.get("/start", function (req, res) {
     const today = new Date();
     var millSeconds = today.getTime();
-    const y = today.getDate();
+    const d = today.getDate();
     const m = today.getMonth() + 1;
-    const d = today.getDay() + 1;
-    const action = req.body.submit;
-    const workerID = req.body.workerID;
+    const y = today.getFullYear();
+    const workerID = req.query.workerID;
 
-    if (action === "enter") {
-        Worker.findOne({
-            workerID: workerID
-        }, function (err, foundWorker) {
-            if (err) {
-                console.log(err);
-            } else {
-                if (foundWorker) {
-                    const newTimer = new Timer({
-                        worker: foundWorker,
-                        seconds: millSeconds,
-                        date: d + "/" + m + "/" + y
-                    });
-                    newTimer.save();
-                    res.redirect("/");
-                }
-            }
-        });
-    } else {
-        Timer.findOne({
-            worker: {
-                $elemMatch: {
-                    workerID: workerID
-                }
-            }
-        }, function (err, foundTimer) {
-            if (foundTimer) {
-                var totalSeconds = millSeconds - foundTimer.seconds;
-                const totalHours = Math.floor(totalSeconds / 3600000);
-                totalSeconds = totalSeconds - (totalHours * 3600000);
-                const totalMinutes = Math.floor(totalSeconds / 60000);
-                totalSeconds = totalSeconds - (totalMinutes * 60000);
-                const newTotal = new Total({
-                    worker: foundTimer.worker,
-                    total: {
-                        hours: totalHours,
-                        minutes: totalMinutes,
-                        seconds: totalSeconds / 1000
-                    },
-                    date: foundTimer.date
-                });
-                newTotal.save();
-                foundTimer.remove();
-                res.redirect("/");
-            }
-        });
-    }
+    Worker.findOne({
+        workerID: workerID
+    }, function (err, foundWorker) {
+        if (err) {
+            console.log(err);
+            res.send("0");
+
+        } else if (foundWorker) {
+            const newTimer = new Timer({
+                worker: foundWorker,
+                millSeconds: millSeconds,
+                date: d + "/" + m + "/" + y
+            });
+            newTimer.save();
+            res.send(foundWorker.firstName);
+        } else {
+            res.send("0");
+        }
+
+    });
 });
 
+app.get("/end", function (req, res) {
+    const today = new Date();
+    var millSeconds = today.getTime();
+    const d = today.getDate();
+    const m = today.getMonth() + 1;
+    const y = today.getFullYear();
+    const workerID = req.query.workerID;
 
-
+    Timer.findOne({
+        worker: {
+            $elemMatch: {
+                workerID: workerID
+            }
+        }
+    }, function (err, foundTimer) {
+        if (err) {
+            console.log(err);
+            res.send("0");
+        } else if (foundTimer) {
+            var totalMillSeconds = millSeconds - foundTimer.millSeconds;
+            const hours = Math.floor(totalMillSeconds / 3600000);
+            totalMillSeconds = totalMillSeconds - hours * 3600000;
+            const minutes = Math.floor(totalMillSeconds / 60000);
+            totalMillSeconds = totalMillSeconds - minutes * 60000;
+            const newTotal = new Total({
+                worker: foundTimer.worker,
+                total: {
+                    hours: hours,
+                    minutes: minutes,
+                    seconds: Math.floor(totalMillSeconds / 1000)
+                },
+                date: d + "/" + m + "/" + y
+            });
+            newTotal.save();
+            foundTimer.remove();
+            res.send(newTotal);
+        } else {
+            res.send("0");
+        }
+    });
+});
 
 app.listen("3000", function (err) {
     console.log("server started on port 3000");
 });
+
